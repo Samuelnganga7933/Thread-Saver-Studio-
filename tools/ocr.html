@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCR Text Extractor – ThreadSave Studio</title>
+<meta name="description" content="Extract text from any image, photo, scanned document, or handwritten note. Free OCR tool that runs entirely in your browser. No uploads to servers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+.ocr-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 300px;
+  gap: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--rlg);
+  overflow: hidden;
+  background: var(--paper);
+  box-shadow: var(--s2);
+  min-height: 520px;
+}
+
+/* LEFT PANEL */
+.ocr-left {
+  border-right: 1px solid var(--rule);
+  background: var(--paper2);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.panel-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink4);
+}
+
+.blocks-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.block-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all .15s;
+  position: relative;
+}
+
+.block-item:hover { background: var(--paper3); }
+.block-item.active {
+  border-left-color: var(--accent);
+  background: var(--pale);
+}
+
+.block-num {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink4);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 3px;
+}
+
+.block-preview {
+  font-size: 12.5px;
+  color: var(--ink2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.block-conf {
+  font-size: 10px;
+  color: var(--ink4);
+  margin-top: 2px;
+}
+
+.block-conf.high { color: var(--ok); }
+.block-conf.med { color: var(--warn); }
+
+.no-blocks {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink4);
+  line-height: 1.5;
+}
+
+/* CENTER */
+.ocr-center {
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+
+.center-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ocr-canvas-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #f8f7f4;
+  position: relative;
+  min-height: 360px;
+}
+
+.ocr-drop-hint {
+  text-align: center;
+  color: var(--ink4);
+}
+
+.ocr-drop-hint .icon { font-size: 40px; margin-bottom: 12px; display: block; }
+.ocr-drop-hint p { font-size: 13px; line-height: 1.6; }
+.ocr-drop-hint span { color: var(--accent); font-weight: 500; cursor: pointer; }
+
+#imgCanvas {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 8px;
+  box-shadow: var(--s2);
+  display: none;
+}
+
+#overlayCanvas {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+  border-radius: 8px;
+}
+
+.center-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* RIGHT EDITOR */
+.ocr-right {
+  border-left: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+
+.editor-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.editor-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+
+.font-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.ctrl-select {
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--rule);
+  background: var(--paper2);
+  font-size: 12px;
+  color: var(--ink2);
+  font-family: var(--sans);
+  outline: none;
+  cursor: pointer;
+}
+
+.ctrl-select:focus { border-color: var(--accent); }
+
+.fmt-btns {
+  display: flex;
+  gap: 5px;
+}
+
+.fmt-btn {
+  width: 32px; height: 32px;
+  border-radius: 7px;
+  border: 1px solid var(--rule);
+  background: var(--paper2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink3);
+  cursor: pointer;
+  transition: all .12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+}
+
+.fmt-btn:hover { background: var(--paper3); color: var(--ink); }
+.fmt-btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.color-label { font-size: 11.5px; color: var(--ink3); }
+
+.color-swatch {
+  width: 24px; height: 24px;
+  border-radius: 5px;
+  border: 1.5px solid var(--rule);
+  cursor: pointer;
+}
+
+.edit-area {
+  flex: 1;
+  min-height: 120px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--ink2);
+  resize: vertical;
+  font-family: var(--sans);
+  outline: none;
+  background: var(--paper);
+  transition: border-color .15s;
+}
+
+.edit-area:focus { border-color: var(--accent); }
+
+.edit-placeholder {
+  font-size: 13px;
+  color: var(--ink4);
+  text-align: center;
+  padding: 24px 16px;
+  line-height: 1.6;
+}
+
+.editor-footer {
+  padding: 14px 16px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* PROGRESS OVERLAY */
+.ocr-progress {
+  position: absolute;
+  inset: 0;
+  background: rgba(250,250,248,.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  display: none;
+  border-radius: 8px;
+}
+
+.ocr-progress.show { display: flex; }
+
+.ocr-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--rule);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ocr-progress-text {
+  font-size: 13px;
+  color: var(--ink3);
+  text-align: center;
+}
+
+.ocr-progress-bar {
+  width: 180px; height: 3px;
+  background: var(--paper3);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.ocr-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width .3s ease;
+  width: 0%;
+}
+
+/* ALL TEXT PANEL */
+.all-text-section {
+  margin-top: 32px;
+  display: none;
+}
+
+.all-text-section.show { display: block; }
+
+.all-text-area {
+  width: 100%;
+  min-height: 160px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  padding: 16px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink2);
+  font-family: var(--sans);
+  outline: none;
+  resize: vertical;
+  background: var(--paper);
+}
+
+.all-text-area:focus { border-color: var(--accent); }
+
+/* RESPONSIVE */
+@media (max-width: 800px) {
+  .ocr-layout {
+    grid-template-columns: 1fr;
+  }
+  .ocr-left { border-right: none; border-bottom: 1px solid var(--rule); max-height: 200px; }
+  .ocr-right { border-left: none; border-top: 1px solid var(--rule); }
+}
+</style>
+</head>
+<body>
+
+<nav class="tool-nav">
+  <div class="tool-nav-in">
+    <a href="../index.html" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      All tools
+    </a>
+    <span class="nav-sep">/</span>
+    <span class="tool-nav-title">🔍 OCR Text Extractor</span>
+    <span class="nav-badge">Local only · No uploads</span>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="tool-hero">
+    <div class="tool-hero-inner">
+      <div class="tool-hero-text">
+        <div class="tool-icon-lg">🔍</div>
+        <h1 class="tool-title">OCR Text<br>Extractor</h1>
+        <p class="tool-desc">Upload any image — a receipt, contract, whiteboard photo, or handwritten note. We detect every text block and let you edit each one individually, without touching the background.</p>
+        <div class="tool-trust">
+          <span class="ttag">Powered by Tesseract.js</span>
+          <span class="ttag">Runs in browser</span>
+          <span class="ttag">Handwriting supported</span>
+          <span class="ttag">Free forever</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload -->
+  <div id="uploadSection">
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept="image/*,.pdf">
+      <span class="drop-icon">📷</span>
+      <div class="drop-title">Drop your image here</div>
+      <div class="drop-sub">or <span>browse to upload</span> · PNG, JPG, WebP, BMP, TIFF · Any size</div>
+    </div>
+  </div>
+
+  <div class="status-box info" id="statusBox">
+    <span>⏳</span>
+    <span id="statusText">Loading Tesseract OCR engine…</span>
+  </div>
+
+  <!-- Main OCR layout -->
+  <div style="margin-top: 28px;">
+    <div class="ocr-layout" id="ocrLayout">
+
+      <!-- LEFT: detected blocks -->
+      <div class="ocr-left">
+        <div class="panel-header">
+          <div class="panel-label">Detected Texts</div>
+        </div>
+        <div class="blocks-list" id="blocksList">
+          <div class="no-blocks">Upload an image to see detected text blocks here.</div>
+        </div>
+      </div>
+
+      <!-- CENTER: image + highlight -->
+      <div class="ocr-center">
+        <div class="center-header">
+          <div style="font-size:12px;color:var(--ink3);" id="centerLabel">No image loaded</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;" onclick="document.getElementById('fileInput').click()">Change image</button>
+          </div>
+        </div>
+
+        <div class="ocr-canvas-wrap" id="canvasWrap">
+          <div class="ocr-drop-hint" id="dropHint">
+            <span class="icon">🖼️</span>
+            <p>Your image will appear here.<br><span onclick="document.getElementById('fileInput').click()">Upload an image</span> to get started.</p>
+          </div>
+          <canvas id="imgCanvas"></canvas>
+          <canvas id="overlayCanvas"></canvas>
+
+          <div class="ocr-progress" id="ocrProgress">
+            <div class="ocr-spinner"></div>
+            <div class="ocr-progress-text" id="progressText">Initializing OCR…</div>
+            <div class="ocr-progress-bar">
+              <div class="ocr-progress-fill" id="progressFill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="center-footer">
+          <button class="btn btn-dark" id="runOcrBtn" disabled>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7l1.8 1.8 3.2-3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Run OCR
+          </button>
+          <button class="btn btn-ghost" id="copyAllBtn" disabled style="font-size:13px;padding:9px 16px;">Copy all text</button>
+          <button class="btn btn-ghost" id="exportTxtBtn" disabled style="font-size:13px;padding:9px 16px;">Export .txt</button>
+          <button class="btn btn-ok" id="exportDocxBtn" disabled style="font-size:13px;padding:9px 16px;">
+            Export DOCX
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: editor -->
+      <div class="ocr-right">
+        <div class="editor-header">
+          <div class="panel-label">Edit Selected Text</div>
+        </div>
+        <div class="editor-body">
+          <div id="editorPlaceholder" class="edit-placeholder">
+            Click any text block on the left to edit it here.
+          </div>
+
+          <div id="editorControls" style="display:none;">
+            <div class="font-controls">
+              <select class="ctrl-select" id="fontFamily" onchange="applyFont()">
+                <option value="DM Sans">DM Sans</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Arial">Arial</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Helvetica">Helvetica</option>
+              </select>
+              <select class="ctrl-select" id="fontSize" onchange="applyFont()">
+                <option>10px</option>
+                <option>12px</option>
+                <option selected>14px</option>
+                <option>16px</option>
+                <option>18px</option>
+                <option>20px</option>
+                <option>24px</option>
+                <option>28px</option>
+              </select>
+            </div>
+
+            <div class="fmt-btns">
+              <button class="fmt-btn" id="boldBtn" onclick="toggleFmt('bold')" title="Bold"><b>B</b></button>
+              <button class="fmt-btn" id="italicBtn" onclick="toggleFmt('italic')" title="Italic"><i>I</i></button>
+              <button class="fmt-btn" id="underBtn" onclick="toggleFmt('underline')" title="Underline"><u>U</u></button>
+            </div>
+
+            <div class="color-row">
+              <span class="color-label">Color:</span>
+              <input type="color" id="textColor" value="#0c0d0f" onchange="applyFont()" style="width:28px;height:28px;border-radius:6px;border:1.5px solid var(--rule);cursor:pointer;padding:0;">
+              <span class="color-label" style="margin-left:8px;">Bg:</span>
+              <input type="color" id="bgColor" value="#ffffff" onchange="applyBg()" style="width:28px;height:28px;border-radius:6px;border:1.5px solid var(--rule);cursor:pointer;padding:0;">
+            </div>
+
+            <textarea class="edit-area" id="editArea" placeholder="Text will appear here when you select a block…" oninput="syncBlock()"></textarea>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-dark" style="font-size:12px;padding:8px 14px;" onclick="saveBlock()">Save edit</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;" onclick="copyBlock()">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-footer">
+          <button class="btn btn-blue" style="width:100%;justify-content:center;" id="exportPdfBtn" disabled>
+            Export edited as PDF
+          </button>
+          <button class="btn btn-ghost" style="width:100%;justify-content:center;font-size:13px;" id="exportDocxBtn2" disabled>
+            Export as DOCX
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- All extracted text -->
+    <div class="all-text-section" id="allTextSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);">All extracted text</div>
+        <button class="btn btn-ghost" style="font-size:12px;padding:7px 14px;" onclick="copyAll()">Copy all</button>
+      </div>
+      <textarea class="all-text-area" id="allTextArea" readonly></textarea>
+    </div>
+  </div>
+
+  <div class="tool-footer">
+    <p>All processing happens locally in your browser using Tesseract.js. No image data is ever sent to a server.</p>
+    <div class="tool-footer-links">
+      <a href="../index.html">← All tools</a>
+      <a href="https://github.com/Samuelnganga7933/Thread-Saver" target="_blank">GitHub</a>
+      <a href="https://buymeacoffee.com/samuelnganga" target="_blank">☕ Support</a>
+    </div>
+  </div>
+</div>
+
+<!-- Tesseract.js from CDN (runs in browser) -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<!-- docx.js for DOCX export -->
+<script src="https://cdn.jsdelivr.net/npm/docx@8/build/index.js"></script>
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+let currentFile = null;
+let ocrBlocks = [];
+let activeBlockIdx = -1;
+let imgElement = null;
+let imgNaturalW = 0, imgNaturalH = 0;
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const blocksList = document.getElementById('blocksList');
+const statusBox = document.getElementById('statusBox');
+const statusText = document.getElementById('statusText');
+const ocrProgress = document.getElementById('ocrProgress');
+const progressText = document.getElementById('progressText');
+const progressFill = document.getElementById('progressFill');
+const runOcrBtn = document.getElementById('runOcrBtn');
+const copyAllBtn = document.getElementById('copyAllBtn');
+const exportTxtBtn = document.getElementById('exportTxtBtn');
+const exportDocxBtn = document.getElementById('exportDocxBtn');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+const exportDocxBtn2 = document.getElementById('exportDocxBtn2');
+const imgCanvas = document.getElementById('imgCanvas');
+const overlayCanvas = document.getElementById('overlayCanvas');
+const centerLabel = document.getElementById('centerLabel');
+const dropHint = document.getElementById('dropHint');
+const editArea = document.getElementById('editArea');
+const editorPlaceholder = document.getElementById('editorPlaceholder');
+const editorControls = document.getElementById('editorControls');
+const allTextSection = document.getElementById('allTextSection');
+const allTextArea = document.getElementById('allTextArea');
+
+// Drag & drop
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+function loadFile(file) {
+  currentFile = file;
+  ocrBlocks = [];
+  activeBlockIdx = -1;
+  renderBlocks();
+  hideEditorControls();
+  allTextSection.classList.remove('show');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      imgElement = img;
+      imgNaturalW = img.naturalWidth;
+      imgNaturalH = img.naturalHeight;
+      drawImageToCanvas(img);
+      dropHint.style.display = 'none';
+      imgCanvas.style.display = 'block';
+      centerLabel.textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB`;
+      runOcrBtn.disabled = false;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function drawImageToCanvas(img) {
+  const wrap = document.getElementById('canvasWrap');
+  const maxW = wrap.clientWidth - 40;
+  const maxH = 420;
+  const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
+  imgCanvas.width = img.naturalWidth * scale;
+  imgCanvas.height = img.naturalHeight * scale;
+  overlayCanvas.width = imgCanvas.width;
+  overlayCanvas.height = imgCanvas.height;
+  overlayCanvas.style.width = imgCanvas.width + 'px';
+  overlayCanvas.style.height = imgCanvas.height + 'px';
+
+  const canvasRect = imgCanvas.getBoundingClientRect();
+  overlayCanvas.style.left = imgCanvas.offsetLeft + 'px';
+  overlayCanvas.style.top = imgCanvas.offsetTop + 'px';
+
+  const ctx = imgCanvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, imgCanvas.width, imgCanvas.height);
+}
+
+// Run OCR
+runOcrBtn.addEventListener('click', async () => {
+  if (!currentFile) return;
+  runOcrBtn.disabled = true;
+  ocrProgress.classList.add('show');
+  progressFill.style.width = '0%';
+  progressText.textContent = 'Loading OCR engine…';
+  statusBox.className = 'status-box info show';
+  statusText.textContent = 'Running OCR — this may take 10–20 seconds for the first run…';
+
+  try {
+    const worker = await Tesseract.createWorker('eng', 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round(m.progress * 100);
+          progressFill.style.width = pct + '%';
+          progressText.textContent = `Recognizing text… ${pct}%`;
+        }
+      }
+    });
+
+    const result = await worker.recognize(currentFile);
+    await worker.terminate();
+
+    const words = result.data.words;
+    const lines = result.data.lines;
+
+    // Group into blocks by paragraph
+    const paras = result.data.paragraphs;
+    ocrBlocks = paras
+      .filter(p => p.text.trim().length > 1)
+      .map((p, i) => ({
+        idx: i,
+        text: p.text.trim(),
+        bbox: p.bbox,
+        conf: p.confidence,
+        edited: p.text.trim(),
+        bold: false, italic: false, underline: false,
+        fontSize: '14px', fontFamily: 'DM Sans',
+        color: '#0c0d0f', bg: '#ffffff'
+      }));
+
+    renderBlocks();
+    drawHighlights(-1);
+
+    const fullText = result.data.text.trim();
+    allTextArea.value = fullText;
+    allTextSection.classList.add('show');
+
+    copyAllBtn.disabled = false;
+    exportTxtBtn.disabled = false;
+    exportDocxBtn.disabled = false;
+    exportPdfBtn.disabled = false;
+    exportDocxBtn2.disabled = false;
+
+    statusBox.className = 'status-box ok show';
+    statusText.textContent = `✓ Found ${ocrBlocks.length} text blocks. Click any block on the left to edit.`;
+
+  } catch (err) {
+    statusBox.className = 'status-box err show';
+    statusText.textContent = 'OCR failed: ' + err.message;
+    console.error(err);
+  }
+
+  ocrProgress.classList.remove('show');
+  runOcrBtn.disabled = false;
+});
+
+function renderBlocks() {
+  if (ocrBlocks.length === 0) {
+    blocksList.innerHTML = '<div class="no-blocks">Run OCR to see detected text blocks here.</div>';
+    return;
+  }
+  blocksList.innerHTML = ocrBlocks.map((b, i) => `
+    <div class="block-item ${i === activeBlockIdx ? 'active' : ''}" onclick="selectBlock(${i})">
+      <div class="block-num">Text block ${i + 1}</div>
+      <div class="block-preview">${b.edited.substring(0, 42)}${b.edited.length > 42 ? '…' : ''}</div>
+      <div class="block-conf ${b.conf > 80 ? 'high' : b.conf > 50 ? 'med' : ''}">${b.conf > 0 ? Math.round(b.conf) + '% confidence' : ''}</div>
+    </div>
+  `).join('');
+}
+
+function selectBlock(idx) {
+  activeBlockIdx = idx;
+  const b = ocrBlocks[idx];
+  renderBlocks();
+  drawHighlights(idx);
+  showEditorControls(b);
+}
+
+function drawHighlights(activeIdx) {
+  if (!imgCanvas || imgCanvas.width === 0) return;
+  const ctx = overlayCanvas.getContext('2d');
+  ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+  const scaleX = imgCanvas.width / imgNaturalW;
+  const scaleY = imgCanvas.height / imgNaturalH;
+
+  ocrBlocks.forEach((b, i) => {
+    if (!b.bbox) return;
+    const x = b.bbox.x0 * scaleX;
+    const y = b.bbox.y0 * scaleY;
+    const w = (b.bbox.x1 - b.bbox.x0) * scaleX;
+    const h = (b.bbox.y1 - b.bbox.y0) * scaleY;
+
+    if (i === activeIdx) {
+      ctx.fillStyle = 'rgba(26,78,255,0.12)';
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = '#1a4eff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, w, h);
+    } else {
+      ctx.strokeStyle = 'rgba(26,78,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, w, h);
+    }
+  });
+}
+
+function showEditorControls(b) {
+  editorPlaceholder.style.display = 'none';
+  editorControls.style.display = 'flex';
+  editorControls.style.flexDirection = 'column';
+  editorControls.style.gap = '10px';
+  editArea.value = b.edited;
+  document.getElementById('fontFamily').value = b.fontFamily;
+  document.getElementById('fontSize').value = b.fontSize;
+  document.getElementById('textColor').value = b.color;
+  document.getElementById('bgColor').value = b.bg;
+  document.getElementById('boldBtn').classList.toggle('on', b.bold);
+  document.getElementById('italicBtn').classList.toggle('on', b.italic);
+  document.getElementById('underBtn').classList.toggle('on', b.underline);
+  applyFont();
+}
+
+function hideEditorControls() {
+  editorPlaceholder.style.display = 'block';
+  editorControls.style.display = 'none';
+}
+
+function syncBlock() {
+  if (activeBlockIdx < 0) return;
+  ocrBlocks[activeBlockIdx].edited = editArea.value;
+  renderBlocks();
+}
+
+function saveBlock() {
+  syncBlock();
+  statusBox.className = 'status-box ok show';
+  statusText.textContent = '✓ Block saved.';
+  setTimeout(() => statusBox.classList.remove('show'), 2000);
+}
+
+function copyBlock() {
+  navigator.clipboard.writeText(editArea.value);
+}
+
+function toggleFmt(type) {
+  if (activeBlockIdx < 0) return;
+  const b = ocrBlocks[activeBlockIdx];
+  b[type] = !b[type];
+  document.getElementById(type === 'bold' ? 'boldBtn' : type === 'italic' ? 'italicBtn' : 'underBtn').classList.toggle('on', b[type]);
+  applyFont();
+}
+
+function applyFont() {
+  if (activeBlockIdx < 0) return;
+  const b = ocrBlocks[activeBlockIdx];
+  b.fontFamily = document.getElementById('fontFamily').value;
+  b.fontSize = document.getElementById('fontSize').value;
+  b.color = document.getElementById('textColor').value;
+  editArea.style.fontFamily = b.fontFamily;
+  editArea.style.fontSize = b.fontSize;
+  editArea.style.fontWeight = b.bold ? '700' : '400';
+  editArea.style.fontStyle = b.italic ? 'italic' : 'normal';
+  editArea.style.textDecoration = b.underline ? 'underline' : 'none';
+  editArea.style.color = b.color;
+}
+
+function applyBg() {
+  if (activeBlockIdx < 0) return;
+  ocrBlocks[activeBlockIdx].bg = document.getElementById('bgColor').value;
+}
+
+function copyAll() {
+  navigator.clipboard.writeText(allTextArea.value);
+  statusBox.className = 'status-box ok show';
+  statusText.textContent = '✓ All text copied to clipboard.';
+  setTimeout(() => statusBox.classList.remove('show'), 2000);
+}
+
+// Export .txt
+exportTxtBtn.addEventListener('click', () => {
+  const text = ocrBlocks.map(b => b.edited).join('\n\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  dl(blob, 'threadsave-ocr.txt');
+});
+
+// Copy all
+copyAllBtn.addEventListener('click', copyAll);
+
+// Export DOCX
+exportDocxBtn.addEventListener('click', exportAsDocx);
+exportDocxBtn2.addEventListener('click', exportAsDocx);
+
+async function exportAsDocx() {
+  if (typeof docx === 'undefined') {
+    alert('DOCX library not loaded. Check your internet connection.');
+    return;
+  }
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
+  const paras = ocrBlocks.map(b => new Paragraph({
+    children: [new TextRun({
+      text: b.edited,
+      bold: b.bold,
+      italics: b.italic,
+      underline: b.underline ? {} : undefined,
+      size: parseInt(b.fontSize) * 2,
+      font: b.fontFamily,
+      color: b.color.replace('#', '')
+    })]
+  }));
+
+  const doc = new Document({ sections: [{ children: paras }] });
+  const blob = await Packer.toBlob(doc);
+  dl(blob, 'threadsave-ocr.docx');
+}
+
+// Export PDF
+exportPdfBtn.addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  let y = 20;
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('OCR Extracted Text', 20, y);
+  y += 10;
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(120, 120, 120);
+  pdf.text('Extracted by ThreadSave Studio · threadsave.studio', 20, y);
+  y += 14;
+  pdf.setTextColor(30, 30, 30);
+
+  ocrBlocks.forEach((b, i) => {
+    pdf.setFontSize(9);
+    pdf.setTextColor(160, 160, 160);
+    pdf.text(`Block ${i + 1}`, 20, y);
+    y += 6;
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', b.bold ? 'bold' : 'normal');
+    pdf.setTextColor(30, 30, 30);
+    const lines = pdf.splitTextToSize(b.edited, 170);
+    lines.forEach(line => {
+      if (y > 270) { pdf.addPage(); y = 20; }
+      pdf.text(line, 20, y);
+      y += 6;
+    });
+    y += 6;
+  });
+
+  pdf.save('threadsave-ocr.pdf');
+});
+
+function dl(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+</script>
+
+</body>
+</html>

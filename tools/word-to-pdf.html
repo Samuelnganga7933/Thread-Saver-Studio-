@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word to PDF – ThreadSave Studio</title>
+<meta name="description" content="Convert Word DOCX to PDF free in your browser. No uploads. Mammoth.js + html2pdf.js.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<nav class="tool-nav"><div class="tool-nav-in">
+  <a href="../index.html" class="back-link"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>All tools</a>
+  <span class="nav-sep">/</span><span class="tool-nav-title">📝 Word to PDF</span>
+  <span class="nav-badge">Local only</span>
+</div></nav>
+
+<div class="wrap">
+  <div class="tool-hero"><div class="tool-hero-inner"><div class="tool-hero-text">
+    <div class="tool-icon-lg">📝</div>
+    <h1 class="tool-title">Word to PDF</h1>
+    <p class="tool-desc">Upload any DOCX file and convert it to a clean, print-ready PDF. Formatting, headings, bold and italic text are all preserved. Runs entirely in your browser.</p>
+    <div class="tool-trust"><span class="ttag">Mammoth.js</span><span class="ttag">html2pdf.js</span><span class="ttag">Free forever</span></div>
+  </div></div></div>
+
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".docx,.doc">
+    <span class="drop-icon">📝</span>
+    <div class="drop-title">Drop your Word document here</div>
+    <div class="drop-sub">or <span style="color:var(--accent);font-weight:500">browse to upload</span> · DOCX files</div>
+  </div>
+
+  <div class="file-info" id="fileInfo">
+    <span class="file-info-icon">📝</span>
+    <div><div class="file-info-name" id="fileName">—</div><div class="file-info-size" id="fileSize">—</div></div>
+    <button class="file-info-remove" onclick="resetTool()">✕</button>
+  </div>
+
+  <div class="status-box" id="statusBox"><span id="statusText"></span></div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label"><span>Converting…</span><span id="progressPct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="output-card" id="outputCard">
+    <div class="output-card-header">
+      <div><div class="output-card-title">✓ Ready to download</div><div class="output-card-sub" id="outputSub"></div></div>
+      <div class="output-actions">
+        <button class="btn btn-ok" onclick="exportPDF()">⬇ Download PDF</button>
+        <button class="btn btn-ghost" onclick="exportHTML()">Download HTML</button>
+      </div>
+    </div>
+    <div class="preview-area" id="previewArea" style="font-family:Georgia,serif;white-space:normal;"></div>
+  </div>
+
+  <div class="tool-footer">
+    <p>Processing happens locally using Mammoth.js and html2pdf.js. No files are uploaded.</p>
+    <div class="tool-footer-links">
+      <a href="../index.html">← All tools</a>
+      <a href="https://github.com/Samuelnganga7933/Thread-Saver" target="_blank">GitHub</a>
+      <a href="https://buymeacoffee.com/samuelnganga" target="_blank">☕</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+let htmlContent = '', currentFileName = '';
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const statusBox = document.getElementById('statusBox');
+const statusText = document.getElementById('statusText');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const progressPct = document.getElementById('progressPct');
+const outputCard = document.getElementById('outputCard');
+const previewArea = document.getElementById('previewArea');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+async function handleFile(file) {
+  currentFileName = file.name.replace(/\.(docx|doc)$/i, '');
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size/1024).toFixed(0) + ' KB';
+  document.getElementById('fileInfo').classList.add('show');
+  dropzone.style.display = 'none';
+  outputCard.classList.remove('show');
+  showStatus('info', '⏳ Reading document…');
+  progressWrap.classList.add('show');
+
+  animate(0, 60, 800);
+  try {
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.convertToHtml({ arrayBuffer: buf });
+    htmlContent = result.value;
+    animate(60, 100, 400);
+    setTimeout(() => {
+      progressWrap.classList.remove('show');
+      previewArea.innerHTML = htmlContent;
+      document.getElementById('outputSub').textContent = `${result.messages.length} style notes · Ready to export`;
+      outputCard.classList.add('show');
+      showStatus('ok', '✓ Document converted. Preview below — download when ready.');
+    }, 420);
+  } catch(err) {
+    progressWrap.classList.remove('show');
+    showStatus('err', '✕ Could not read document: ' + err.message);
+  }
+}
+
+function animate(from, to, duration) {
+  const start = Date.now();
+  const tick = () => {
+    const p = Math.min((Date.now()-start)/duration, 1);
+    const val = Math.round(from + (to-from)*p);
+    progressFill.style.width = val+'%';
+    progressPct.textContent = val+'%';
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+window.exportPDF = function() {
+  const container = document.createElement('div');
+  container.innerHTML = `<style>body{font-family:Georgia,serif;padding:32px;color:#111;line-height:1.7}h1,h2,h3{margin:16px 0 8px}p{margin:0 0 10px}strong{font-weight:700}em{font-style:italic}</style>${htmlContent}`;
+  container.style.cssText = 'position:absolute;left:-9999px;top:0;width:720px;background:#fff;padding:40px;';
+  document.body.appendChild(container);
+  html2pdf().set({ margin:12, filename:`${currentFileName}-threadsave.pdf`, image:{type:'jpeg',quality:.95}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} }).from(container).save().then(() => document.body.removeChild(container));
+};
+
+window.exportHTML = function() {
+  const blob = new Blob([`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${currentFileName}</title><style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.7;color:#111}</style></head><body>${htmlContent}</body></html>`], {type:'text/html'});
+  dl(blob, currentFileName+'-threadsave.html');
+};
+
+window.resetTool = function() {
+  dropzone.style.display=''; document.getElementById('fileInfo').classList.remove('show');
+  outputCard.classList.remove('show'); statusBox.classList.remove('show');
+  progressWrap.classList.remove('show'); fileInput.value=''; htmlContent='';
+};
+
+function showStatus(type, msg) { statusBox.className=`status-box ${type} show`; statusText.textContent=msg; }
+function dl(blob, name) { const u=URL.createObjectURL(blob),a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),2000); }
+</script>
+</body></html>

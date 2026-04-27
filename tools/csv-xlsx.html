@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSV ↔ XLSX – ThreadSave Studio</title>
+<meta name="description" content="Convert CSV to Excel XLSX and XLSX to CSV free in your browser. No uploads. SheetJS powered.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+.mode-toggle { display:flex; gap:0; border:1px solid var(--rule); border-radius:10px; overflow:hidden; margin-bottom:28px; }
+.mode-btn { flex:1; padding:12px 20px; font-size:14px; font-weight:500; color:var(--ink3); background:var(--paper2); transition:all .15s; cursor:pointer; font-family:var(--sans); }
+.mode-btn.on { background:var(--ink); color:#fff; }
+.table-preview { overflow-x:auto; border:1px solid var(--rule); border-radius:var(--r); }
+table { width:100%; border-collapse:collapse; font-size:12.5px; }
+th { background:var(--paper2); padding:8px 12px; text-align:left; font-weight:600; color:var(--ink2); border-bottom:1px solid var(--rule); white-space:nowrap; }
+td { padding:8px 12px; border-bottom:1px solid var(--rule); color:var(--ink3); white-space:nowrap; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--paper2); }
+</style>
+</head>
+<body>
+<nav class="tool-nav"><div class="tool-nav-in">
+  <a href="../index.html" class="back-link"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>All tools</a>
+  <span class="nav-sep">/</span><span class="tool-nav-title">📊 CSV ↔ XLSX</span>
+  <span class="nav-badge">Local only</span>
+</div></nav>
+
+<div class="wrap">
+  <div class="tool-hero"><div class="tool-hero-inner"><div class="tool-hero-text">
+    <div class="tool-icon-lg">📊</div>
+    <h1 class="tool-title">CSV ↔ XLSX</h1>
+    <p class="tool-desc">Convert between CSV and Excel XLSX instantly. Both directions. Preview your data before downloading. Powered by SheetJS, fully in your browser.</p>
+    <div class="tool-trust"><span class="ttag">SheetJS</span><span class="ttag">Both directions</span><span class="ttag">Preview table</span><span class="ttag">Free forever</span></div>
+  </div></div></div>
+
+  <div class="mode-toggle">
+    <button class="mode-btn on" id="modeCSV" onclick="setMode('csv')">CSV → XLSX</button>
+    <button class="mode-btn" id="modeXLSX" onclick="setMode('xlsx')">XLSX → CSV</button>
+  </div>
+
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".csv">
+    <span class="drop-icon">📊</span>
+    <div class="drop-title" id="dropTitle">Drop your CSV file here</div>
+    <div class="drop-sub">or <span style="color:var(--accent);font-weight:500">browse to upload</span></div>
+  </div>
+
+  <div class="file-info" id="fileInfo">
+    <span class="file-info-icon" id="fileIcon">📊</span>
+    <div><div class="file-info-name" id="fileName">—</div><div class="file-info-size" id="fileSize">—</div></div>
+    <button class="file-info-remove" onclick="resetTool()">✕</button>
+  </div>
+
+  <div class="status-box" id="statusBox"><span id="statusText"></span></div>
+
+  <div class="output-card" id="outputCard">
+    <div class="output-card-header">
+      <div><div class="output-card-title">✓ Ready</div><div class="output-card-sub" id="outputSub"></div></div>
+      <div class="output-actions">
+        <button class="btn btn-ok" id="dlBtn" onclick="doDownload()">⬇ Download</button>
+        <button class="btn btn-ghost" onclick="copyCSV()">Copy CSV</button>
+      </div>
+    </div>
+    <div class="table-preview"><table id="dataTable"><thead></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="tool-footer">
+    <p>All processing uses SheetJS in your browser. No data is uploaded anywhere.</p>
+    <div class="tool-footer-links"><a href="../index.html">← All tools</a><a href="https://github.com/Samuelnganga7933/Thread-Saver" target="_blank">GitHub</a><a href="https://buymeacoffee.com/samuelnganga" target="_blank">☕</a></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+let mode = 'csv';
+let workbook = null;
+let csvData = '';
+let currentFileName = '';
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeCSV').classList.toggle('on', m==='csv');
+  document.getElementById('modeXLSX').classList.toggle('on', m==='xlsx');
+  const fi = document.getElementById('fileInput');
+  fi.accept = m==='csv' ? '.csv' : '.xlsx,.xls';
+  document.getElementById('dropTitle').textContent = m==='csv' ? 'Drop your CSV file here' : 'Drop your XLSX file here';
+  document.getElementById('fileIcon').textContent = m==='csv' ? '📊' : '📋';
+  resetTool();
+}
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag-over'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { if(fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+async function handleFile(file) {
+  currentFileName = file.name.replace(/\.(csv|xlsx|xls)$/i,'');
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size/1024).toFixed(0)+' KB';
+  document.getElementById('fileInfo').classList.add('show');
+  dropzone.style.display = 'none';
+  document.getElementById('outputCard').classList.remove('show');
+
+  try {
+    const buf = await file.arrayBuffer();
+    workbook = XLSX.read(buf, {type:'array'});
+    const ws = workbook.Sheets[workbook.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    csvData = XLSX.utils.sheet_to_csv(ws);
+    renderTable(data);
+    const rows = data.length; const cols = data[0]?.length||0;
+    document.getElementById('outputSub').textContent = `${rows} rows · ${cols} columns · Sheet: ${workbook.SheetNames[0]}`;
+    document.getElementById('dlBtn').textContent = mode==='csv' ? '⬇ Download XLSX' : '⬇ Download CSV';
+    document.getElementById('outputCard').classList.add('show');
+    showStatus('ok', `✓ Parsed successfully. Preview below.`);
+  } catch(err) {
+    showStatus('err', '✕ Could not parse file: ' + err.message);
+  }
+}
+
+function renderTable(data) {
+  const table = document.getElementById('dataTable');
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  thead.innerHTML = tbody.innerHTML = '';
+  if (!data.length) return;
+  const headers = data[0];
+  thead.innerHTML = '<tr>'+headers.map(h=>`<th>${esc(String(h))}</th>`).join('')+'</tr>';
+  data.slice(1,51).forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = headers.map((_,i)=>`<td>${esc(String(row[i]||''))}</td>`).join('');
+    tbody.appendChild(tr);
+  });
+}
+
+window.doDownload = function() {
+  if (!workbook) return;
+  if (mode==='csv') {
+    const wb = XLSX.utils.book_new();
+    const ws = workbook.Sheets[workbook.SheetNames[0]];
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSX.writeFile(wb, currentFileName+'-threadsave.xlsx');
+  } else {
+    const blob = new Blob([csvData], {type:'text/csv'});
+    dl(blob, currentFileName+'-threadsave.csv');
+  }
+};
+
+window.copyCSV = function() {
+  navigator.clipboard.writeText(csvData);
+  showStatus('ok', '✓ CSV data copied to clipboard.');
+  setTimeout(() => document.getElementById('statusBox').classList.remove('show'), 2000);
+};
+
+window.resetTool = function() {
+  dropzone.style.display=''; document.getElementById('fileInfo').classList.remove('show');
+  document.getElementById('outputCard').classList.remove('show');
+  document.getElementById('statusBox').classList.remove('show');
+  fileInput.value=''; workbook=null; csvData='';
+};
+
+function showStatus(type, msg) { const sb=document.getElementById('statusBox'); sb.className=`status-box ${type} show`; document.getElementById('statusText').textContent=msg; }
+function dl(blob, name) { const u=URL.createObjectURL(blob),a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),2000); }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body></html>

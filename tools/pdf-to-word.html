@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF to Word – ThreadSave Studio</title>
+<meta name="description" content="Convert PDF to editable Word DOCX file free. No uploads. Runs entirely in your browser using PDF.js and docx.js.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+</style>
+</head>
+<body>
+
+<nav class="tool-nav">
+  <div class="tool-nav-in">
+    <a href="../index.html" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      All tools
+    </a>
+    <span class="nav-sep">/</span>
+    <span class="tool-nav-title">📄 PDF to Word</span>
+    <span class="nav-badge">Local only · No uploads</span>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="tool-hero">
+    <div class="tool-hero-inner">
+      <div class="tool-hero-text">
+        <div class="tool-icon-lg">📄</div>
+        <h1 class="tool-title">PDF to Word</h1>
+        <p class="tool-desc">Upload any PDF and get a fully editable DOCX file. Text, headings, paragraphs — all extracted and rebuilt. Runs entirely in your browser with PDF.js and docx.js. Nothing is uploaded anywhere.</p>
+        <div class="tool-trust">
+          <span class="ttag">PDF.js + docx.js</span>
+          <span class="ttag">Runs in browser</span>
+          <span class="ttag">Free forever</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".pdf">
+    <span class="drop-icon">📄</span>
+    <div class="drop-title">Drop your PDF here</div>
+    <div class="drop-sub">or <span style="color:var(--accent);font-weight:500;">browse to upload</span> · PDF files only</div>
+  </div>
+
+  <div class="file-info" id="fileInfo">
+    <span class="file-info-icon">📄</span>
+    <div>
+      <div class="file-info-name" id="fileName">—</div>
+      <div class="file-info-size" id="fileSize">—</div>
+    </div>
+    <button class="file-info-remove" onclick="resetTool()" title="Remove file">✕</button>
+  </div>
+
+  <div class="status-box" id="statusBox">
+    <span id="statusIcon">⏳</span>
+    <span id="statusText">Processing…</span>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span id="progressLabel">Extracting text…</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="output-card" id="outputCard">
+    <div class="output-card-header">
+      <div>
+        <div class="output-card-title">✓ Conversion complete</div>
+        <div class="output-card-sub" id="outputSub">—</div>
+      </div>
+      <div class="output-actions">
+        <button class="btn btn-ghost" onclick="copyText()">Copy text</button>
+        <button class="btn btn-ok" id="downloadBtn" onclick="downloadDocx()">
+          ⬇ Download DOCX
+        </button>
+      </div>
+    </div>
+    <div class="preview-area" id="previewArea"></div>
+  </div>
+
+  <div class="tool-footer">
+    <p>All PDF processing happens locally in your browser using PDF.js. No data is ever sent to a server.</p>
+    <div class="tool-footer-links">
+      <a href="../index.html">← All tools</a>
+      <a href="https://github.com/Samuelnganga7933/Thread-Saver" target="_blank">GitHub</a>
+      <a href="https://buymeacoffee.com/samuelnganga" target="_blank">☕ Support</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module" id="pdfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8/build/index.js"></script>
+<script type="module">
+import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+
+let extractedPages = [];
+let currentFileName = '';
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+const statusBox = document.getElementById('statusBox');
+const statusText = document.getElementById('statusText');
+const statusIcon = document.getElementById('statusIcon');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+const progressPct = document.getElementById('progressPct');
+const outputCard = document.getElementById('outputCard');
+const previewArea = document.getElementById('previewArea');
+const outputSub = document.getElementById('outputSub');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+async function handleFile(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    showStatus('err', '✕ Please upload a PDF file.');
+    return;
+  }
+  currentFileName = file.name.replace('.pdf', '');
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
+  fileInfo.classList.add('show');
+  dropzone.style.display = 'none';
+  outputCard.classList.remove('show');
+  extractedPages = [];
+
+  showStatus('info', '⏳ Reading PDF…');
+  progressWrap.classList.add('show');
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const total = pdf.numPages;
+
+    for (let i = 1; i <= total; i++) {
+      progressLabel.textContent = `Extracting page ${i} of ${total}…`;
+      const pct = Math.round((i / total) * 100);
+      progressFill.style.width = pct + '%';
+      progressPct.textContent = pct + '%';
+
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const lines = [];
+      let lastY = null;
+      let currentLine = '';
+
+      content.items.forEach(item => {
+        if ('str' in item) {
+          if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+            if (currentLine.trim()) lines.push(currentLine.trim());
+            currentLine = item.str;
+          } else {
+            currentLine += (currentLine && !currentLine.endsWith(' ') ? ' ' : '') + item.str;
+          }
+          lastY = item.transform[5];
+        }
+      });
+      if (currentLine.trim()) lines.push(currentLine.trim());
+      extractedPages.push({ page: i, lines });
+    }
+
+    const allText = extractedPages.map(p =>
+      `--- Page ${p.page} ---\n${p.lines.join('\n')}`
+    ).join('\n\n');
+
+    previewArea.textContent = allText;
+    const wordCount = allText.split(/\s+/).filter(Boolean).length;
+    outputSub.textContent = `${total} pages · ${wordCount.toLocaleString()} words extracted`;
+
+    progressWrap.classList.remove('show');
+    outputCard.classList.add('show');
+    showStatus('ok', `✓ Extracted ${total} pages successfully. Download your DOCX below.`);
+
+  } catch (err) {
+    progressWrap.classList.remove('show');
+    showStatus('err', '✕ Could not read PDF: ' + err.message);
+  }
+}
+
+window.downloadDocx = async function () {
+  if (!extractedPages.length || typeof docx === 'undefined') return;
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel, PageBreak } = docx;
+
+  const children = [];
+  extractedPages.forEach((p, pi) => {
+    if (pi > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
+    p.lines.forEach(line => {
+      const isHeading = line.length < 80 && line === line.toUpperCase() && line.trim().length > 3;
+      children.push(new Paragraph({
+        heading: isHeading ? HeadingLevel.HEADING_2 : undefined,
+        children: [new TextRun({ text: line, size: isHeading ? 28 : 22 })]
+      }));
+    });
+  });
+
+  const doc = new Document({ sections: [{ children }] });
+  const blob = await Packer.toBlob(doc);
+  dl(blob, `${currentFileName}-threadsave.docx`);
+};
+
+window.copyText = function () {
+  navigator.clipboard.writeText(previewArea.textContent);
+  showStatus('ok', '✓ Text copied to clipboard.');
+  setTimeout(() => statusBox.classList.remove('show'), 2000);
+};
+
+window.resetTool = function () {
+  dropzone.style.display = '';
+  fileInfo.classList.remove('show');
+  outputCard.classList.remove('show');
+  statusBox.classList.remove('show');
+  progressWrap.classList.remove('show');
+  fileInput.value = '';
+  extractedPages = [];
+};
+
+function showStatus(type, msg) {
+  statusBox.className = `status-box ${type} show`;
+  statusText.textContent = msg;
+}
+
+function dl(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+</script>
+</body>
+</html>
