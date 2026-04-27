@@ -1,4 +1,4 @@
-# ThreadSave — Chrome Extension + Studio Website
+# Fiverr Conversation Extractor Chrome Extension (ThreadSave — Chrome Extension) + Studio Website
 
 > **Two products. One repo. Zero servers.**
 >
