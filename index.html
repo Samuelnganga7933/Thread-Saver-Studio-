@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ThreadSave Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--ink:#0d0d0d;--ink2:#3d3d3d;--ink3:#888;--bg:#f7f6f2;--bg2:#efede7;--bg3:#e5e2da;--white:#fff;--line:#dddad2}
+html{scroll-behavior:smooth}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--ink);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;background:rgba(247,246,242,0.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:8px;font-family:"Syne",sans-serif;font-size:16px;font-weight:800;letter-spacing:-0.5px;text-decoration:none;color:var(--ink)}
+.logo-box{width:26px;height:26px;background:var(--ink);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo-box svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5}
+.nav-links{display:flex;gap:4px}
+.nav-link{font-size:13px;color:var(--ink2);text-decoration:none;padding:6px 12px;border-radius:6px;transition:background .15s}
+.nav-link:hover{background:var(--bg2)}
+.nav-cta{font-size:13px;font-weight:600;color:#fff;background:var(--ink);padding:7px 16px;border-radius:7px;text-decoration:none;transition:opacity .15s}
+.nav-cta:hover{opacity:.82}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:100px 40px 80px;position:relative;overflow:hidden}
+.grain{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none}
+.ring1{position:absolute;width:680px;height:680px;border-radius:50%;border:1px solid var(--line);right:-180px;top:-120px;opacity:.55;pointer-events:none}
+.ring2{position:absolute;width:380px;height:380px;border-radius:50%;border:1px solid var(--line);right:-40px;bottom:-80px;opacity:.35;pointer-events:none}
+.blob{position:absolute;width:220px;height:220px;border-radius:50%;background:var(--bg3);right:140px;top:180px;opacity:.45;pointer-events:none}
+.hero-inner{position:relative;max-width:780px}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--line);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:500;color:var(--ink2);margin-bottom:28px}
+.tag-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+h1{font-family:"Syne",sans-serif;font-size:clamp(44px,6.5vw,88px);font-weight:800;line-height:.95;letter-spacing:-3px;color:var(--ink);margin-bottom:24px}
+h1 .dim{color:var(--ink3)}
+.hero-desc{font-size:16px;font-weight:300;color:var(--ink2);line-height:1.75;max-width:500px;margin-bottom:36px}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:52px}
+.btn-dark{display:inline-flex;align-items:center;gap:7px;background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:11px 20px;border-radius:8px;text-decoration:none;border:none;cursor:pointer;transition:opacity .15s;font-family:"DM Sans",sans-serif}
+.btn-dark:hover{opacity:.82}
+.btn-dark svg,.btn-dark-svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2}
+.btn-out{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--ink);font-size:13px;font-weight:500;padding:10px 20px;border-radius:8px;text-decoration:none;border:1.5px solid var(--line);cursor:pointer;transition:border-color .15s,background .15s;font-family:"DM Sans",sans-serif}
+.btn-out:hover{border-color:var(--ink);background:var(--bg2)}
+.btn-out svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.plats{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.plat-lbl{font-size:11px;color:var(--ink3);letter-spacing:.5px;text-transform:uppercase;margin-right:4px}
+.plat{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--ink2);padding:4px 10px;border-radius:5px;background:var(--white);border:1px solid var(--line)}
+.plat-dot{width:6px;height:6px;border-radius:50%}
+.ext-sec{background:var(--ink);padding:80px 40px}
+.ext-inner{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;max-width:1100px;margin:0 auto}
+.ext-ey{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:16px}
+.ext-h{font-family:"Syne",sans-serif;font-size:clamp(26px,3vw,42px);font-weight:800;letter-spacing:-1.5px;line-height:1.05;color:#fff;margin-bottom:14px}
+.ext-sub{font-size:14px;font-weight:300;color:rgba(255,255,255,.5);line-height:1.75;margin-bottom:28px}
+.ext-feats{display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+.ext-feat{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+.feat-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.25);flex-shrink:0;margin-top:7px}
+.ext-feat strong{color:#fff;font-weight:500}
+.btn-white{display:inline-flex;align-items:center;gap:7px;background:#fff;color:var(--ink);font-size:13px;font-weight:600;padding:11px 20px;border-radius:8px;text-decoration:none;border:none;cursor:pointer;transition:opacity .15s;font-family:"DM Sans",sans-serif}
+.btn-white:hover{opacity:.85}
+.btn-white svg{width:14px;height:14px;fill:currentColor}
+.mockup{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;max-width:320px;width:100%}
+.mk-hd{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between}
+.mk-logo{font-family:"Syne",sans-serif;font-size:13px;font-weight:800;color:#fff;display:flex;align-items:center;gap:6px}
+.mk-lb{width:20px;height:20px;background:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.mk-lb svg{width:11px;height:11px;stroke:#0d0d0d;fill:none;stroke-width:2.5}
+.mk-chip{font-size:10px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.07);padding:3px 8px;border-radius:10px;display:flex;align-items:center;gap:4px}
+.mk-dot{width:5px;height:5px;border-radius:50%;background:#1dbf73}
+.mk-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.07)}
+.mk-tab{flex:1;padding:8px;font-size:11px;text-align:center;color:rgba(255,255,255,.3)}
+.mk-tab.on{color:#fff;border-bottom:2px solid #fff}
+.mk-count{text-align:center;padding:16px 0 12px}
+.mk-n{font-family:"Syne",sans-serif;font-size:40px;font-weight:800;color:#fff;line-height:1}
+.mk-s{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+.mk-fmts{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:0 14px;margin-bottom:10px}
+.mk-fmt{padding:6px 2px;border-radius:5px;font-size:10px;font-weight:600;text-align:center;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4)}
+.mk-fmt.on{background:#fff;color:#0d0d0d;border-color:#fff}
+.mk-export{margin:0 14px 14px;background:#fff;color:#0d0d0d;border:none;border-radius:7px;padding:10px;width:calc(100% - 28px);font-size:12px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif}
+.tools-wrap{padding:80px 40px;max-width:1200px;margin:0 auto}
+.sec-ey{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:12px}
+.sec-h{font-family:"Syne",sans-serif;font-size:clamp(26px,4vw,48px);font-weight:800;letter-spacing:-1.5px;line-height:1.05;color:var(--ink);margin-bottom:40px}
+.tgrid{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--line);gap:1px}
+.tcell{background:var(--white);padding:22px 18px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-decoration:none;color:inherit;transition:background .12s}
+.tcell:hover{background:var(--bg2)}
+.tc-ico{width:36px;height:36px;background:var(--bg2);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.tc-ico svg{width:16px;height:16px;stroke:var(--ink);fill:none;stroke-width:2}
+.tc-nm{font-family:"Syne",sans-serif;font-size:13px;font-weight:700;color:var(--ink)}
+.tc-ds{font-size:12px;color:var(--ink3);line-height:1.5}
+.tc-bg{font-size:10px;font-weight:700;letter-spacing:.3px;padding:2px 7px;border-radius:4px;width:fit-content;margin-top:2px}
+.b-free{background:#dcfce7;color:#15803d}
+.b-new{background:#fef9c3;color:#a16207}
+.proof-wrap{padding:80px 40px;max-width:1200px;margin:0 auto}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.pc{border:1px solid var(--line);border-radius:10px;background:var(--white);overflow:hidden}
+.pc-hd{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink)}
+.pdot{width:7px;height:7px;border-radius:50%}
+.pc-chat{padding:12px;display:flex;flex-direction:column;gap:7px}
+.pm{padding:6px 10px;border-radius:7px;font-size:11px;line-height:1.5;max-width:82%}
+.pm.l{background:var(--bg2);color:var(--ink2);align-self:flex-start}
+.pm.r{background:var(--ink);color:#fff;align-self:flex-end}
+.pc-ft{padding:8px 12px;border-top:1px solid var(--line);background:var(--bg);display:flex;align-items:center;justify-content:space-between}
+.pc-meta{font-size:10px;color:var(--ink3)}
+.pc-fmts{display:flex;gap:4px}
+.pc-fmt{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:var(--bg2);color:var(--ink2)}
+.ocr-sec{padding:80px 40px;background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.ocr-in{display:grid;grid-template-columns:1fr 1.2fr;gap:64px;align-items:center;max-width:1100px;margin:0 auto}
+.ocr-ui{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,.05)}
+.ocr-bar{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--bg)}
+.ob{width:26px;height:26px;border-radius:5px;border:1px solid var(--line);background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ob svg{width:12px;height:12px;stroke:var(--ink2);fill:none;stroke-width:2}
+.ocr-body{display:flex;height:280px}
+.ocr-sl{width:118px;flex-shrink:0;border-right:1px solid var(--line);padding:9px 7px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.ocr-slh{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;padding:0 3px}
+.oi{padding:5px 7px;border-radius:5px;border:1px solid transparent;cursor:pointer;transition:all .1s}
+.oi:hover{background:var(--bg2);border-color:var(--line)}
+.oi.on{background:var(--ink);border-color:var(--ink)}
+.oi-n{font-size:9px;font-weight:700;letter-spacing:.4px;color:var(--ink3)}
+.oi.on .oi-n{color:rgba(255,255,255,.45)}
+.oi-t{font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:86px}
+.oi.on .oi-t{color:#fff}
+.ocr-cv{flex:1;background:#edeae0;position:relative;overflow:hidden}
+.cert{position:absolute;inset:14px;background:#fff;border:1px solid #d0cac0;border-radius:6px;padding:18px;font-family:Georgia,serif;display:flex;flex-direction:column;gap:7px}
+.ct{font-size:13px;font-weight:700;text-align:center;color:#222;letter-spacing:.5px}
+.cst{font-size:9px;text-align:center;color:#aaa;letter-spacing:.3px}
+.chr{height:1px;background:#ddd}
+.cb{font-size:10px;color:#555;text-align:center;line-height:1.5}
+.cn{font-size:15px;font-weight:700;text-align:center;color:#111;font-style:italic}
+.csc{font-size:10px;color:#777;text-align:center}
+.cbox{position:absolute;border:2px solid var(--ink);border-radius:2px;pointer-events:none}
+.cbox.on{background:rgba(13,13,13,.1)}
+.contact-sec{background:var(--ink);padding:72px 40px;display:flex;align-items:center;justify-content:space-between;gap:40px;flex-wrap:wrap}
+.ch{font-family:"Syne",sans-serif;font-size:clamp(22px,3vw,36px);font-weight:800;letter-spacing:-1px;color:#fff;margin-bottom:6px}
+.cs2{font-size:14px;font-weight:300;color:rgba(255,255,255,.45)}
+.cr{display:flex;gap:10px;flex-wrap:wrap}
+.clink{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;transition:opacity .15s}
+.clink.w{background:#fff;color:var(--ink)}
+.clink.o{background:transparent;color:rgba(255,255,255,.65);border:1.5px solid rgba(255,255,255,.18)}
+.clink:hover{opacity:.8}
+.clink svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.clink.w svg{stroke:var(--ink)}
+footer{padding:18px 40px;border-top:1px solid rgba(255,255,255,.08);background:var(--ink);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.flogo{font-family:"Syne",sans-serif;font-size:14px;font-weight:800;color:rgba(255,255,255,.4);letter-spacing:-0.3px}
+.flinks{display:flex;gap:20px}
+.flinks a{font-size:12px;color:rgba(255,255,255,.3);text-decoration:none;transition:color .15s}
+.flinks a:hover{color:rgba(255,255,255,.7)}
+.fcopy{font-size:11px;color:rgba(255,255,255,.2)}
+@media(max-width:768px){
+  nav{padding:0 20px}
+  .nav-links{display:none}
+  .hero,.ext-sec,.tools-wrap,.ocr-sec,.proof-wrap,.contact-sec{padding-left:20px;padding-right:20px}
+  h1{letter-spacing:-2px}
+  .ext-inner{grid-template-columns:1fr}
+  .mockup{display:none}
+  .tgrid{grid-template-columns:repeat(2,1fr)}
+  .ocr-in{grid-template-columns:1fr}
+  .pgrid{grid-template-columns:1fr}
+  .contact-sec{flex-direction:column;align-items:flex-start}
+  footer{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">
+    <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    ThreadSave
+  </a>
+  <div class="nav-links">
+    <a href="#tools" class="nav-link">Tools</a>
+    <a href="#ocr" class="nav-link">OCR</a>
+    <a href="#extension" class="nav-link">Extension</a>
+    <a href="#contact" class="nav-link">Contact</a>
+  </div>
+  <a href="https://github.com/Samuelnganga7933/Thread-Saver" class="nav-cta" target="_blank">Get extension</a>
+</nav>
+<section class="hero">
+  <div class="grain"></div>
+  <div class="ring1"></div>
+  <div class="ring2"></div>
+  <div class="blob"></div>
+  <div class="hero-inner">
+    <div class="hero-tag"><div class="tag-dot"></div>Free forever. Local only. No signup.</div>
+    <h1>Export<br>conversations.<br><span class="dim">Convert anything.</span></h1>
+    <p class="hero-desc">ThreadSave captures your Fiverr, Upwork and WhatsApp threads in one click, and gives you a full document toolkit in the browser. Nothing ever leaves your device.</p>
+    <div class="hero-btns">
+      <a href="https://github.com/Samuelnganga7933/Thread-Saver" class="btn-dark" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Get the extension
+      </a>
+      <a href="#tools" class="btn-out">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Open Studio tools
+      </a>
+    </div>
+    <div class="plats">
+      <span class="plat-lbl">Works on</span>
+      <div class="plat"><div class="plat-dot" style="background:#1dbf73"></div>Fiverr</div>
+      <div class="plat"><div class="plat-dot" style="background:#6fda44"></div>Upwork</div>
+      <div class="plat"><div class="plat-dot" style="background:#29b2fe"></div>Freelancer</div>
+      <div class="plat"><div class="plat-dot" style="background:#25d366"></div>WhatsApp Web</div>
+      <div class="plat"><div class="plat-dot" style="background:#0866ff"></div>Messenger</div>
+      <div class="plat"><div class="plat-dot" style="background:#0a66c2"></div>LinkedIn</div>
+    </div>
+  </div>
+</section>
+<section class="ext-sec" id="extension">
+  <div class="ext-inner">
+    <div>
+      <p class="ext-ey">Flagship Chrome Extension</p>
+      <h2 class="ext-h">One click.<br>Conversation saved.</h2>
+      <p class="ext-sub">Open any Fiverr or Upwork chat, click the icon, pick your format. Saved to Downloads in seconds. Also detects audio, video, PDFs, JSON, TXT and more from any webpage automatically.</p>
+      <div class="ext-feats">
+        <div class="ext-feat"><div class="feat-dot"></div><span><strong>Auto-detects</strong> conversations on Fiverr, Upwork, WhatsApp, Messenger, LinkedIn, X</span></div>
+        <div class="ext-feat"><div class="feat-dot"></div><span><strong>7 export formats:</strong> PDF, HTML, CSV, XLSX, TXT, JSON, Markdown</span></div>
+        <div class="ext-feat"><div class="feat-dot"></div><span><strong>Media detector:</strong> spots audio, video, PDFs, JSON, TXT on any page with instant save</span></div>
+        <div class="ext-feat"><div class="feat-dot"></div><span><strong>Zero uploads.</strong> Runs entirely in your browser, always</span></div>
+      </div>
+      <a href="https://github.com/Samuelnganga7933/Thread-Saver" class="btn-white" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        Download free on GitHub
+      </a>
+    </div>
+    <div class="mockup">
+      <div class="mk-hd">
+        <div class="mk-logo"><div class="mk-lb"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>ThreadSave</div>
+        <div class="mk-chip"><div class="mk-dot"></div>Fiverr</div>
+      </div>
+      <div class="mk-tabs"><div class="mk-tab on">Conversations</div><div class="mk-tab">Media &amp; Files</div></div>
+      <div class="mk-count"><div class="mk-n">12</div><div class="mk-s">messages detected</div></div>
+      <div class="mk-fmts">
+        <div class="mk-fmt on">PDF</div><div class="mk-fmt">HTML</div><div class="mk-fmt">CSV</div><div class="mk-fmt">JSON</div>
+      </div>
+      <button class="mk-export">Export conversation</button>
+    </div>
+  </div>
+</section>
+<div class="tools-wrap" id="tools">
+  <p class="sec-ey">Studio tools</p>
+  <h2 class="sec-h">Every format.<br>One place.</h2>
+  <div class="tgrid">
+    <a href="tools/pdf-to-word.html" class="tcell"><div class="tc-ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg></div><div class="tc-nm">PDF to Word</div><div class="tc-ds">Extract text and layout. Rebuild as editable DOCX.</div><span class="tc-bg b-free">Free</span></a>
+    <a href="tools/word-to-pdf.html" class="tcell"><div class="tc-ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="13" width="8" height="5" rx="1"/></svg></div><div class="tc-nm">Word to PDF</div><div class="tc-ds">Clean print-ready PDF with formatting preserved.</div><span class="tc-bg b-free">Free</span></a>
+    <a href="tools/ocr.html" class="tcell"><div class="tc-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div><div class="tc-nm">OCR Editor</div><div class="tc-ds">Detect text in any image. Edit in place, export clean.</div><span class="tc-bg b-new">New</span></a>
+    <a href="tools/csv-xlsx.html" class="tcell"><div class="tc-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg></div><div class="tc-nm">CSV / XLSX</div><div class="tc-ds">Convert both directions. No row limit.</div><span class="tc-bg b-free">Free</span></a>
+    <a href="tools/image-convert.html" class="tcell"><div class="tc-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><div class="tc-nm">Image Converter</div><div class="tc-ds">PNG, JPG, WebP. Resize and compress.</div><span class="tc-bg b-free">Free</span></a>
+    <a href="tools/pdf-editor.html" class="tcell"><div class="tc-ico"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="tc-nm">PDF Editor</div><div class="tc-ds">Annotate, highlight, add text. No Acrobat.</div><span class="tc-bg b-new">New</span></a>
+    <a href="tools/image-to-pdf.html" class="tcell"><div class="tc-ico"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div><div class="tc-nm">Image to PDF</div><div class="tc-ds">Combine multiple images into one clean PDF.</div><span class="tc-bg b-free">Free</span></a>
+    <a href="tools/word-to-html.html" class="tcell"><div class="tc-ico"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div><div class="tc-nm">Word to HTML</div><div class="tc-ds">Clean semantic HTML ready for web or CMS.</div><span class="tc-bg b-free">Free</span></a>
+  </div>
+</div>
+<div class="proof-wrap">
+  <p class="sec-ey">Platforms</p>
+  <h2 class="sec-h">Works where you work.</h2>
+  <div class="pgrid">
+    <div class="pc"><div class="pc-hd"><div class="pdot" style="background:#1dbf73"></div>Fiverr</div><div class="pc-chat"><div class="pm l">Can you deliver by Friday?</div><div class="pm r">Yes, starting now.</div><div class="pm l">Great. Order placed.</div></div><div class="pc-ft"><span class="pc-meta">Saved locally</span><div class="pc-fmts"><span class="pc-fmt">PDF</span><span class="pc-fmt">CSV</span></div></div></div>
+    <div class="pc"><div class="pc-hd"><div class="pdot" style="background:#6fda44"></div>Upwork</div><div class="pc-chat"><div class="pm l">Your proposal looks great.</div><div class="pm r">Available Thursday 3PM?</div><div class="pm l">Perfect. Sending contract.</div></div><div class="pc-ft"><span class="pc-meta">Saved locally</span><div class="pc-fmts"><span class="pc-fmt">HTML</span><span class="pc-fmt">JSON</span></div></div></div>
+    <div class="pc"><div class="pc-hd"><div class="pdot" style="background:#25d366"></div>WhatsApp Web</div><div class="pc-chat"><div class="pm l">Invoice attached. Please confirm.</div><div class="pm r">Got it. Paying now.</div><div class="pm l">Payment confirmed!</div></div><div class="pc-ft"><span class="pc-meta">Saved locally</span><div class="pc-fmts"><span class="pc-fmt">PDF</span><span class="pc-fmt">MD</span></div></div></div>
+  </div>
+</div>
+<section class="ocr-sec" id="ocr">
+  <div class="ocr-in">
+    <div>
+      <p class="sec-ey">OCR Editor</p>
+      <h2 class="sec-h" style="margin-bottom:14px">Edit text.<br>Keep the original.</h2>
+      <p style="font-size:15px;font-weight:300;color:var(--ink2);line-height:1.75;margin-bottom:22px">Upload any image, certificate, invoice, or scanned document. ThreadSave detects every text block. Click one, edit it. The background stays untouched.</p>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:28px">
+        <li style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink2)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ink);flex-shrink:0"></span>Handles scans, photos, low-contrast images</li>
+        <li style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink2)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ink);flex-shrink:0"></span>Reads signatures, stamps, handwriting</li>
+        <li style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink2)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ink);flex-shrink:0"></span>50MB+ files supported</li>
+        <li style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink2)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ink);flex-shrink:0"></span>Export as PDF, DOCX, or PNG</li>
+      </ul>
+      <a href="tools/ocr.html" class="btn-dark">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Try OCR Editor
+      </a>
+    </div>
+    <div class="ocr-ui">
+      <div class="ocr-bar">
+        <button class="ob"><svg viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+        <button class="ob"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <div style="flex:1"></div>
+        <button class="ob"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+      </div>
+      <div class="ocr-body">
+        <div class="ocr-sl">
+          <div class="ocr-slh">Detected</div>
+          <div class="oi on"><div class="oi-n">Block 1</div><div class="oi-t">Certificate of</div></div>
+          <div class="oi"><div class="oi-n">Block 2</div><div class="oi-t">Intelligence</div></div>
+          <div class="oi"><div class="oi-n">Block 3</div><div class="oi-t">Samuel Nganga</div></div>
+          <div class="oi"><div class="oi-n">Block 4</div><div class="oi-t">IQ Score: 132</div></div>
+          <div class="oi"><div class="oi-n">Block 5</div><div class="oi-t">98th Percentile</div></div>
+        </div>
+        <div class="ocr-cv">
+          <div class="cert">
+            <div class="ct">CERTIFICATE OF INTELLIGENCE</div>
+            <div class="cst">Verified Assessment</div>
+            <div class="chr"></div>
+            <div class="cb">This certifies that</div>
+            <div class="cn">Samuel Nganga</div>
+            <div class="csc">IQ Score: 132 &nbsp;|&nbsp; 98th Percentile</div>
+            <div class="chr"></div>
+            <div class="csc" style="font-size:8px;color:#ccc">Authorised signatory</div>
+            <div class="cbox on" style="top:6px;left:8px;right:8px;height:20px"></div>
+            <div class="cbox" style="top:62px;left:25%;right:25%;height:24px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="contact-sec" id="contact">
+  <div><div class="ch">Built by Samuel Nganga.</div><div class="cs2">Questions, bugs, ideas. Reach out directly.</div></div>
+  <div class="cr">
+    <a href="mailto:samuelnganga7933@gmail.com" class="clink w"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>samuelnganga7933@gmail.com</a>
+    <a href="https://wa.me/254745450032" class="clink o"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>+254 745 450 032</a>
+    <a href="https://buymeacoffee.com/samuelnganga" class="clink o"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Buy me a coffee</a>
+  </div>
+</div>
+<footer>
+  <span class="flogo">ThreadSave Studio</span>
+  <div class="flinks">
+    <a href="https://github.com/Samuelnganga7933/Thread-Saver-Studio-" target="_blank">Studio repo</a>
+    <a href="https://github.com/Samuelnganga7933/Thread-Saver" target="_blank">Extension repo</a>
+    <a href="mailto:samuelnganga7933@gmail.com">Contact</a>
+  </div>
+  <span class="fcopy">2025 Samuel Nganga</span>
+</footer>
+</body>
+</html>
